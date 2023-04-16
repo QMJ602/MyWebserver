@@ -1,7 +1,25 @@
 # MyWebserver
 * 基于epoll和线程池的并发webserver；
-* 采用同步I/O的模拟的Proactor模式，即主线程负责监听连接和I/O读写，工作线程负责业务处理(解析请求，确定应答信息等)；
-* 使用了sendfile零拷贝发送文件。
+* 采用同步I/O模拟的Proactor模式，主线程负责监听连接和I/O读写，工作线程负责业务处理(解析请求，确定应答信息等)；
+* 使用sendfile零拷贝发送文件。
+
+# 使用方法
+1. 克隆仓库
+```
+git clone git@github.com:QMJ602/MyWebserver.git
+```
+2. 生成
+```shell
+rm -r build
+mkdir build
+cd build
+cmake ..
+make
+```
+3. 运行
+```shell
+./webserver [本机ip] [端口号]
+```
 
 # TCP服务器编程基本流程
 1. 创建socket
@@ -16,7 +34,7 @@ int ret = bind(listen_fd, (sockaddr*)&host_addr, sizeof(host_addr));
 ```
 3. 设置套接字为监听状态
    监听套接字会维护两个队列：
-*  `SYN_RCVD`，半连接队列，收到了客户端的连接请求，发出`SYN+ACK包，等待客户端的`ACK`;
+*  `SYN_RCVD`，半连接队列，收到了客户端的连接请求，发出`SYN+ACK`包，等待客户端的`ACK`;
 *  `SYN_ESTABLISHED`，全连接队列，已经建立连接。
 
 ```c++
