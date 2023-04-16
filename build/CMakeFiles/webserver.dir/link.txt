@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -rdynamic CMakeFiles/webserver.dir/main.cpp.o -o webserver  http/libhttp.a -lpthread 
