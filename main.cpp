@@ -131,6 +131,12 @@ int main(int argc, char* argv[])
                     }
                     // 注册新的连接文件描述符，启用oneshot
                     addfd(epollfd, connfd, true);
+                    //释放已断开连接的httpconn对象
+                    if(users[connfd])
+                    {
+                        delete users[connfd];
+                        users[connfd] = NULL;
+                    }
                     users[connfd] = new Http_conn(connfd, epollfd, client);
                     char client_ip[16];
                     // 地址转换 无符号整数到点分字符串
@@ -142,42 +148,47 @@ int main(int argc, char* argv[])
             else if(events[i].events & EPOLLRDHUP)
             {
                 removefd(epollfd, sockfd);
-                delete users[sockfd];
-                users[sockfd] = NULL;
+                // delete users[sockfd];
+                // users[sockfd] = NULL;
                 printf("A client left.\n");
             }
             else if(events[i].events & EPOLLIN)
             {
-                // 对端关闭连接/没有数据可读/缓冲区装不下
-                if(!users[sockfd]->read())
-                {
-                    removefd(epollfd, sockfd);
-                    delete users[sockfd];
-                    users[sockfd] = NULL;
-                    printf("A client left.\n");
-                }
-                //如果连接没有关闭
-                if(users[sockfd])
-                {
-                    pool.append(users[sockfd]);//往请求队列加入任务
-                }
+                users[sockfd]->M_READ = true;
+                pool.append(users[sockfd]);
+                // // 对端关闭连接/没有数据可读/缓冲区装不下
+                // if(!users[sockfd]->read())
+                // {
+                //     removefd(epollfd, sockfd);
+                //     delete users[sockfd];
+                //     users[sockfd] = NULL;
+                //     printf("A client left.\n");
+                // }
+                // //如果连接没有关闭
+                // if(users[sockfd])
+                // {
+                //     pool.append(users[sockfd]);//往请求队列加入任务
+                // }
+
             }
             else if(events[i].events & EPOLLOUT)//可写
             {
-                users[sockfd]->write();
-                //不保持连接
-                if(!users[sockfd]->m_linger)
-                {
-                    removefd(epollfd, sockfd);
-                    delete users[sockfd];
-                    users[sockfd] = NULL;
-                }
-                else//保持连接
-                {
-                    users[sockfd]->init();
-                    //注册读事件 重置EPOLLONESHOT
-                    modfd(epollfd, sockfd, EPOLLIN);
-                }
+                // users[sockfd]->write();
+                // //不保持连接
+                // if(!users[sockfd]->m_linger)
+                // {
+                //     removefd(epollfd, sockfd);
+                //     delete users[sockfd];
+                //     users[sockfd] = NULL;
+                // }
+                // else//保持连接
+                // {
+                //     users[sockfd]->init();
+                //     //注册读事件 重置EPOLLONESHOT
+                //     modfd(epollfd, sockfd, EPOLLIN);
+                // }
+                users[sockfd]->M_WRITE = true;
+                pool.append(users[sockfd]);
             }
         }
     }

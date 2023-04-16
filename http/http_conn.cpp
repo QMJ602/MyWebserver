@@ -13,7 +13,7 @@ const char* doc_root = "../Resource";//服务器根目录
 // const char* homepage = "/home/qmj/linux_net/homepage.jpg";
 // const char* doc_root = "/home/qmj/blog/public";
 // const char* homepage = "/home/qmj/blog/public/index.html";
-const char* homepage = "../Resource/gakki.html";
+const char* homepage = "../Resource/login.html";
 
 Http_conn::Http_conn(int sockfd, int epollfd, sockaddr_in client_address)
 {
@@ -43,6 +43,8 @@ void Http_conn::init()
     m_method = GET;
     m_content_length = 0;
     m_content = NULL;
+    M_READ = false;
+    M_WRITE = false;
 }
 
 //读取socket上的数据
@@ -85,7 +87,7 @@ bool Http_conn::write()
     {
         off_t bytes_have_send = 0;//已发送的字节数，作为每次sendfile的偏移
         ssize_t bytes_to_send = m_file_stat.st_size;//要发送的字节数
-        printf("file size:%ld\n", bytes_to_send);
+        //printf("file size:%ld\n", bytes_to_send);
         while(bytes_to_send > 0)//循环发送，直至文件发送完成
         {
             int count = sendfile(m_sockfd, m_file_fd, &bytes_have_send, bytes_to_send);//bytes_have_send会随着sendfile的调用自动更新
@@ -105,7 +107,7 @@ bool Http_conn::write()
                 break;
             }
             bytes_to_send -= count;
-            printf("%d字节已发送, 剩余%d字节.\n", bytes_have_send, bytes_to_send);
+            //printf("%d字节已发送, 剩余%d字节.\n", bytes_have_send, bytes_to_send);
         }
         close(m_file_fd);
     }
@@ -478,20 +480,53 @@ bool Http_conn::process_write(HTTP_CODE read_ret)
     return true;
 }
 
+// void Http_conn::process()
+// {
+//     HTTP_CODE read_ret = NO_REQUEST;
+//     //解析请求
+//     while(read_ret == NO_REQUEST)
+//     {
+//         read_ret = process_read();
+//     }
+//     //得到请求，确定应答内容,填充发送缓冲区
+//     process_write(read_ret);
+//     //填充完成后，可以发送了，注册写事件 重置EPOLLONESHOT
+//     modfd(m_epollfd, m_sockfd, EPOLLOUT);
+// }
 void Http_conn::process()
 {
-    HTTP_CODE read_ret = NO_REQUEST;
-    //解析请求
-    while(read_ret == NO_REQUEST)
+    if(M_READ) // 读任务
     {
-        read_ret = process_read();
+        if(this->read())
+        {
+            HTTP_CODE read_ret = NO_REQUEST;
+            //解析请求
+            while(read_ret == NO_REQUEST)
+            {
+                read_ret = process_read();
+            }
+            //得到请求，确定应答内容,填充发送缓冲区
+            process_write(read_ret);
+            // 注册写事件
+            modfd(m_epollfd, m_sockfd, EPOLLOUT);
+        }
+        M_READ = false;
     }
-    //得到请求，确定应答内容,填充发送缓冲区
-    process_write(read_ret);
-    //填充完成后，可以发送了，注册写事件 重置EPOLLONESHOT
-    modfd(m_epollfd, m_sockfd, EPOLLOUT);
+    if(M_WRITE) // 写任务
+    {
+        this->write();
+        if(m_linger)//保持连接
+        {
+            this->init();
+            //注册读事件
+            modfd(m_epollfd, m_sockfd, EPOLLIN);
+        }
+        else
+        {
+            removefd(m_epollfd, m_sockfd);
+        }
+    }
 }
-
 
 //修改注册的事件
 // void modfd( int epollfd, int fd, int ev )

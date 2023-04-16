@@ -63,6 +63,8 @@ private:
 public:
     //是否保持连接
     bool m_linger;
+    bool M_READ;
+    bool M_WRITE;
 
 private:
     //读缓冲区
@@ -100,4 +102,5 @@ private:
 };
 
 extern void modfd( int epollfd, int fd, int ev );
+extern void removefd( int epollfd, int fd );
 #endif

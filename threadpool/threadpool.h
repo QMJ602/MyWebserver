@@ -120,8 +120,9 @@ void threadpool<T>::run(int index)
         m_queue_locker.unlock();
         if(request)
         {
-            // printf("工作线程%d正在处理...\n", index);
+            printf("工作线程%d正在处理...\n", index);
             request->process();
+            printf("工作线程%d处理完毕...\n", index);
         }
     }
 }
