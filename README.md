@@ -88,4 +88,6 @@ close( fd );
 * errno是线程局部变量，每个线程都有自己的errno，因此是线程安全的。
 
 
+# 数据库操作
+https://blog.csdn.net/weixin_49730048/article/details/124353156
 

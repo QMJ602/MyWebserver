@@ -91,7 +91,6 @@ bool Http_conn::write()
         while(bytes_to_send > 0)//循环发送，直至文件发送完成
         {
             int count = sendfile(m_sockfd, m_file_fd, &bytes_have_send, bytes_to_send);//bytes_have_send会随着sendfile的调用自动更新
-            //printf("count:%d\n", count);
             if(count < 0 && errno == EAGAIN)
             {
                 //写缓冲区满
@@ -107,7 +106,7 @@ bool Http_conn::write()
                 break;
             }
             bytes_to_send -= count;
-            //printf("%d字节已发送, 剩余%d字节.\n", bytes_have_send, bytes_to_send);
+            printf("%d字节已发送, 剩余%d字节.\n", bytes_have_send, bytes_to_send);
         }
         close(m_file_fd);
     }

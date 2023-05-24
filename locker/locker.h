@@ -7,9 +7,9 @@
 //posix信号量类
 class sem{
 public:
-    sem()
+    sem(int value = 0)
     {
-        if(sem_init(&m_sem, 0, 0) != 0)
+        if(sem_init(&m_sem, 0, value) != 0)
         {
             throw std::exception();  //抛出异常，报告错误
         }
