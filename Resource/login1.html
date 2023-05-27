@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>登录和注册</title>
+  <style>
+    /* body {
+    background-image: url("homepage.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    }
+    .container {
+      width: 300px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .container h2 {
+      text-align: center;
+    }
+    .container input[type="text"],
+    .container input[type="password"],
+    .container input[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .container input[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    } */
+    body {
+      height:100%;
+      background-image: url('background.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .container {
+      width: 300px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 5px;
+      background-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .container h2 {
+      text-align: center;
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .container input[type="text"],
+    .container input[type="password"],
+    .container input[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 3px;
+    }
+
+    .container input[type="text"],
+    .container input[type="password"] {
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    .container input[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 12px;
+      text-transform: uppercase;
+    }
+
+    .container input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+    
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>登录</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="用户名" required><br>
+      <input type="password" id="password" placeholder="密码" required><br>
+      <input type="hidden" name="action" value="login">
+      <input type="submit" value="登录">
+    </form>
+    <h2>注册</h2>
+    <form id="registerForm">
+      <input type="text" id="newUsername" placeholder="用户名" required><br>
+      <input type="password" id="newPassword" placeholder="密码" required><br>
+      <input type="submit" value="注册">
+    </form>
+  </div>
+
+  <script>
+    // 登录按钮点击事件处理
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault(); // 阻止表单提交
+      var username = document.getElementById('username').value;
+      var password = document.getElementById('password').value;
+      // 执行注册逻辑，例如发送AJAX请求给服务器创建新用户
+      // 这里只是一个示例，实际情况中需要根据具体需求进行实现
+      console.log('登录信息：', username, password);
+      console.log('请求类型：登录');
+
+      // 创建请求体数据
+      var formData = 'username=' + encodeURIComponent(username) +
+                     '&password=' + encodeURIComponent(password) + "\r\n";
+      var headers = new Headers();
+      headers.append('Content-Type', 'application/x-www-form-urlencoded');
+      headers.append('action', 'login');
+      // 发送POST请求
+      fetch('/login', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        // 处理响应数据
+        console.log('登录请求响应：', data);
+      })
+      .catch(error => {
+        // 处理错误
+        console.error('登录请求错误：', error);
+      });
+    });
+    // 注册按钮点击事件处理
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+      event.preventDefault(); // 阻止表单提交
+      var newUsername = document.getElementById('newUsername').value;
+      var newPassword = document.getElementById('newPassword').value;
+      // 执行注册逻辑，例如发送AJAX请求给服务器创建新用户
+      // 这里只是一个示例，实际情况中需要根据具体需求进行实现
+      console.log('注册信息：', newUsername, newPassword);
+      console.log('请求类型：注册');
+
+      // 创建请求体数据
+      var formData = 'newUsername=' + encodeURIComponent(newUsername) +
+                     '&newPassword=' + encodeURIComponent(newPassword) + "\r\n";
+      var headers = new Headers();
+      headers.append('Content-Type', 'application/x-www-form-urlencoded');
+      headers.append('action', 'register');
+      // 发送POST请求
+      fetch('/register', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        // 处理响应数据
+        console.log('注册请求响应：', data);
+      })
+      .catch(error => {
+        // 处理错误
+        console.error('注册请求错误：', error);
+      });
+    });
+  </script>
+</body>
+</html>

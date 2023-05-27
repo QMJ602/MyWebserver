@@ -3,7 +3,7 @@
 
 mysql_connpool::mysql_connpool()
 {
-
+    this->m_maxConn = 0;
 }
 
 mysql_connpool::~mysql_connpool()
@@ -12,15 +12,17 @@ mysql_connpool::~mysql_connpool()
 }
 
 // 懒汉模式，第一次获取时创建
-mysql_connpool& mysql_connpool::getInstance()
+mysql_connpool* mysql_connpool::getInstance()
 {
     // 局部静态变量实现单例模式  c++11规定在初始化变量时其它线程必须等待，因此是线程安全的
     static mysql_connpool connpool;
-    return connpool;
+    return &connpool;
 }
 
 void mysql_connpool::init(std::string ip, unsigned int port, std::string user, std::string password, std::string databaseName, int maxConn)
 {
+    if(this->m_maxConn != 0) return;     //已初始化过
+    printf("akakakakakka\n");
     this->m_ip = ip;
     this->m_port = port;
     this->m_user = user;

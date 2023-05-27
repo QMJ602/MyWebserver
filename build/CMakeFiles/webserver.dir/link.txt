@@ -1,1 +1,1 @@
-/usr/bin/c++ -g -rdynamic CMakeFiles/webserver.dir/main.cpp.o -o webserver  http/libhttp.a -lpthread 
+/usr/bin/c++   -g   CMakeFiles/webserver.dir/main.cpp.o  -o webserver -rdynamic http/libhttp.a -lpthread mysql_connpool/libsql.a -lmysqlclient 

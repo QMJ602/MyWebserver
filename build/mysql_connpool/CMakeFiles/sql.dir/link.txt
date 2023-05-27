@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsql.a  CMakeFiles/sql.dir/mysql_connpool.cpp.o
+/usr/bin/ranlib libsql.a

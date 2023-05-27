@@ -13,8 +13,19 @@ const char* doc_root = "../Resource";//服务器根目录
 // const char* homepage = "/home/qmj/linux_net/homepage.jpg";
 // const char* doc_root = "/home/qmj/blog/public";
 // const char* homepage = "/home/qmj/blog/public/index.html";
-const char* homepage = "../Resource/login.html";
+const char* homepage = "../Resource/login1.html";
+std::string sql_ip = "127.0.0.1";
+std::string sql_user = "root";
+std::string sql_passwd = "123456";
+std::string sql_database = "registeration";
+int sql_port = 3306;
+int sql_maxconn = 10;
 
+void Http_conn::sql_connpool_init()
+{
+    m_connpool = mysql_connpool::getInstance();
+    m_connpool->init(sql_ip, sql_port, sql_user, sql_passwd, sql_database, sql_maxconn);
+}
 Http_conn::Http_conn(int sockfd, int epollfd, sockaddr_in client_address)
 {
     m_sockfd = sockfd;
@@ -45,6 +56,8 @@ void Http_conn::init()
     m_content = NULL;
     M_READ = false;
     M_WRITE = false;
+    m_connpool = NULL;
+    sql_connpool_init();
 }
 
 //读取socket上的数据
@@ -270,9 +283,16 @@ Http_conn::HTTP_CODE Http_conn::parse_request_head(char* temp)
         m_content_length = atoi(num);
         printf("Content-Length:%d\n", m_content_length);
     }
-    else                                               //其他头部字段
+    else if(strcasecmp(temp, "action") == 0)                                              //其他头部字段
     {
-
+        char* act = colon + 1;
+        act += strspn(act, " ");
+        if(strcasecmp(act, "register") == 0)        //登录还是注册
+        {
+            m_action = REGISTER;
+        }
+        else
+            m_action = LOGIN;
     }
     return NO_REQUEST;
 }
@@ -285,6 +305,7 @@ Http_conn::HTTP_CODE Http_conn::parse_request_head(char* temp)
 Http_conn::HTTP_CODE Http_conn::parse_request_content(char* temp)
 {
     m_content = temp;
+    printf("content:%s\n", m_content);
     return GET_REQUEST;
 }
 
@@ -316,16 +337,25 @@ Http_conn::HTTP_CODE Http_conn::process_read()
         case CHECK_STATE_REQUEST_HEAD:
             ret_code = parse_request_head(temp);
             if(ret_code == BAD_REQUEST)
+            {
+                //printf("00000000\n");
                 return BAD_REQUEST;
+            }
             if(ret_code == GET_REQUEST)
             {
+                // printf("111111111\n");
                 return do_request();
             }
             break;
             //分析请求体
         case CHECK_STATE_REQUEST_CONTENT:
+            //printf("2222222222\n");
             ret_code = parse_request_content(temp);
-            return do_request();
+            if(ret_code == GET_REQUEST)
+            {
+                printf("2222222222\n");
+                return do_request();
+            }
             break;
         default:
             return INTERNAL_ERROR;//服务器内部错误
@@ -351,34 +381,103 @@ Http_conn::HTTP_CODE Http_conn::process_read()
  * ***********************************************************/
 Http_conn::HTTP_CODE Http_conn::do_request()
 {
-    //请求网站首页  /
-    if(strlen(m_url) == 1)
+    if(m_method == GET)
     {
-        strcpy(m_target_file, homepage);
+        
+        //请求网站首页  /
+        if(strlen(m_url) == 1)
+        {
+            strcpy(m_target_file, homepage);
+        }
+        else
+        {//获得资源路径
+            strcpy(m_target_file, doc_root);
+            int len = strlen(doc_root);
+            strcpy(m_target_file + len, m_url);
+        }
+        //资源不存在
+        if(stat(m_target_file, &m_file_stat) < 0)//获取文件状态信息，保存在m_file_stat结构体中
+        {
+            return NO_RESOURCE;
+        }
+        //如果其他用户没有读权限
+        if(!(m_file_stat.st_mode & S_IROTH))
+        {
+            return FORBIDDEN_REQUEST;
+        }
+        //如果目标资源是一个目录
+        if(S_ISDIR(m_file_stat.st_mode))
+        {
+            return BAD_REQUEST;
+        }
+        //否则，是一个文件请求
+        return FILE_REQUEST;
     }
-    else
-    {//获得资源路径
-        strcpy(m_target_file, doc_root);
-        int len = strlen(doc_root);
-        strcpy(m_target_file + len, m_url);
-    }
-    //资源不存在
-    if(stat(m_target_file, &m_file_stat) < 0)//获取文件状态信息，保存在m_file_stat结构体中
+    else if(m_method == POST)
     {
-        return NO_RESOURCE;
+        if(m_content == NULL)
+            return BAD_REQUEST;
+        //解析用户名密码
+        char* delimiter = strchr(m_content, '&');
+        char* username = strchr(m_content, '=') + 1;
+        char* passwd = strchr(delimiter, '=') + 1;
+        *delimiter = '\0';
+        MYSQL* sql = m_connpool->getConnection();
+        if(m_action == REGISTER)
+        {
+            char query[100];
+            char format[] = "SELECT 1 FROM user WHERE username='%s' LIMIT 1";
+            snprintf(query, 100, format, username);
+            if(0 == mysql_query(sql, query))
+            {
+                MYSQL_RES* result = mysql_store_result(sql);
+                if (mysql_num_rows(result) == 0)
+                {
+                    char insert[100];
+                    char fmt[] = "INSERT INTO user(username, passwd) VALUES('%s', '%s')";
+                    snprintf(insert, 100, fmt, username, passwd);
+                    if(0 == mysql_query(sql, insert))
+                    {
+                        printf("插入成功\n");
+                    }
+                }
+                mysql_free_result(result);
+            }
+        }
+        else if(m_action == LOGIN)
+        {
+            char query[100];
+            char format[] = "SELECT * FROM user WHERE username='%s'";
+            snprintf(query, 100, format, username);
+            if(0 == mysql_query(sql, query))
+            {
+                MYSQL_RES* result = mysql_store_result(sql);
+                if(mysql_num_rows(result) == 0)
+                {
+                    printf("用户不存在！\n");
+                    return BAD_REQUEST;
+                }
+                MYSQL_ROW row = mysql_fetch_row(result);
+                unsigned int num_fields = mysql_num_fields(result);
+                for (unsigned int i = 0; i < num_fields; i++) {
+                    printf("%s ", row[i] ? row[i] : "NULL");
+                        }
+                if(strcmp(row[1], passwd) == 0)
+                {
+                    printf("登录成功！\n");
+                }
+                else
+                {
+                    printf("密码错误\n");
+                    printf("%s\n", passwd);
+                    printf("%s\n",row[1]);
+                }
+                mysql_free_result(result);
+            }
+        }
+        return FILE_REQUEST;
     }
-    //如果其他用户没有读权限
-    if(!(m_file_stat.st_mode & S_IROTH))
-    {
-        return FORBIDDEN_REQUEST;
-    }
-    //如果目标资源是一个目录
-    if(S_ISDIR(m_file_stat.st_mode))
-    {
-        return BAD_REQUEST;
-    }
-    //否则，是一个文件请求
-    return FILE_REQUEST;
+    
 }
 /**************************************************************
  * 功能：向发送缓冲区添加内容

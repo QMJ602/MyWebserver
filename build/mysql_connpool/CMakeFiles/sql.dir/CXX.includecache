@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/qmj/MyWebserver/locker/locker.h
+exception
+-
+pthread.h
+-
+semaphore.h
+-
+
+/home/qmj/MyWebserver/mysql_connpool/mysql_connpool.cpp
+iostream
+-
+mysql_connpool.h
+/home/qmj/MyWebserver/mysql_connpool/mysql_connpool.h
+
+/home/qmj/MyWebserver/mysql_connpool/mysql_connpool.h
+mysql/mysql.h
+-
+string
+-
+list
+-
+../locker/locker.h
+/home/qmj/MyWebserver/locker/locker.h
+

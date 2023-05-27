@@ -13,6 +13,7 @@
 #include<sys/sendfile.h>
 #include <sys/epoll.h>
 #include <errno.h>
+#include "../mysql_connpool/mysql_connpool.h"
 
 // static const int READ_BUFFER_SIZE = 2048;
 // static const int WRITE_BUFFER_SIZE = 1024;
@@ -37,6 +38,9 @@ public:
     enum HTTP_CODE{
         NO_REQUEST = 0, GET_REQUEST, BAD_REQUEST, INTERNAL_ERROR, FORBIDDEN_REQUEST, NO_RESOURCE, FILE_REQUEST
     };
+    enum ACTION{
+        DEFAULT = 0, LOGIN, REGISTER
+    };
 public:
     Http_conn(int sockfd, int epollfd, sockaddr_in client_address);
     ~Http_conn();
@@ -60,6 +64,7 @@ private:
     bool add_headers(int content_lenth);
     bool add_content(const char* content);
     bool process_write(HTTP_CODE read_ret);
+    void sql_connpool_init();
 public:
     //是否保持连接
     bool m_linger;
@@ -99,6 +104,8 @@ private:
     sockaddr_in m_client_address;
     int m_sockfd;
     int m_epollfd;
+    ACTION m_action;
+    mysql_connpool* m_connpool;
 };
 
 extern void modfd( int epollfd, int fd, int ev );

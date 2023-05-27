@@ -5,7 +5,7 @@
 
 class mysql_connpool{
 public:
-    static mysql_connpool& getInstance();                           // 获取连接池实例
+    static mysql_connpool* getInstance();                           // 获取连接池实例
     ~mysql_connpool();
 public:
     void init(std::string ip, unsigned int port, std::string user, std::string password, std::string databaseName, int maxConn);
